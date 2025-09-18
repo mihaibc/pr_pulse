@@ -33,14 +33,12 @@ PR Pulse gives engineering managers, tech leads, and delivery teams immediate vi
 
 ## What You’ll See
 
-| Section | Description |
-| --- | --- |
-| Hero metrics | Total active PRs, warning (2+ days), danger (5+ days) at a glance |
-| Repository cards | Collapsible groups with counts for ready and draft reviews |
-| PR details | Title, creator avatar and name, branch source/target, publish date, relative "active" time, quick Review button |
-| Draft drawers | Optional, per-repo panels to inspect draft PRs without clutter |
+- **Hero metrics** — Total active PRs, warning (2+ days), danger (5+ days) at a glance.
+- **Repository cards** — Collapsible groups with counts for ready and draft reviews.
+- **PR details** — Title, creator avatar and name, branch source/target, publish date, relative "active" time, quick Review button.
+- **Draft drawers** — Optional, per-repo panels to inspect draft PRs without clutter.
 
-*(Add screenshots/GIFs in your published listing for maximum marketplace impact.)*
+![Image](/images/mk/metrics.png)
 
 ## Getting Started
 
