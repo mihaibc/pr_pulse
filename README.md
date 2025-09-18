@@ -4,6 +4,8 @@
 
 PR Pulse gives engineering managers, tech leads, and delivery teams immediate visibility into the pull requests that are slowing down your releases. Highlight bottlenecks, surface aging reviews, and respond before work goes stale.
 
+![Image](/images/mk/extension-overview.png)
+
 ## Overview
 
 - **Platform**: Azure DevOps (Azure Repos)
@@ -13,6 +15,8 @@ PR Pulse gives engineering managers, tech leads, and delivery teams immediate vi
 ## Why Teams Choose PR Pulse
 
 - **360° Pull Request Awareness** – Aggregate every active pull request across repositories and teams in a single hub, updated live with the Azure DevOps Extension SDK.
+![Image](/images/mk/focus.png)
+
 - **Built-in Aging Alerts** – Teal/orange severity badges flag PRs older than 2 or 5 days so you can rebalance reviewers before deadlines slip.
 - **Repository-Level Focus** – Expand/collapse repo sections to zero in on the services that need attention; drill into draft PRs only when you need them.
 - **Reviewer Accountability** – Each card shows creator name, profile image, branch flow, and time-in-review to make follow‑ups effortless.
@@ -24,6 +28,8 @@ PR Pulse gives engineering managers, tech leads, and delivery teams immediate vi
 - **One-Click Deep Links** – Launch directly into the Azure Repos PR page to comment or complete a merge.
 - **Org-Friendly Metrics** – Global counters show totals, warnings, and critical backlogs across the entire project.
 - **Responsive & Accessible** – Keyboard-friendly toggles, lazy-loaded avatars, and responsive grids ensure the dashboard feels native inside Azure DevOps.
+
+![Image](/images/mk/highlight.png)
 
 ## What You’ll See
 
