@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "pr-pulse",
   "name": "PR Pulse",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "publisher": "bacumi",
   "public": true,
   "tags": [
@@ -12,20 +12,6 @@
     "dashboard",
     "repos",
     "staleness alerts"
-  ],
-  "links": [
-    {
-      "rel": "Repository",
-      "uri": "https://github.com/mihaibc/pr_pulse"
-    },
-    {
-      "rel": "Support",
-      "uri": "mailto:contact@bacumi.com"
-    },
-    {
-      "rel": "Contact",
-      "uri": "mailto:contact@bacumi.com"
-    }
   ],
   "targets": [
     {
@@ -48,8 +34,23 @@
     },
     "license": {
       "path": "LICENSE"
+    },
+    "changelog": {
+      "path": "CHANGELOG.md"
     }
   },
+  "links": {
+        "getstarted": {
+            "uri": "https://github.com/mihaibc/pr_pulse"
+        },
+        "support": {
+            "uri": "mailto:contact@bacumi.com"
+        }
+    },
+  "repository": {
+        "type": "git",
+        "uri": "https://github.com/mihaibc/pr_pulse"
+    },
   "files": [
     {
       "path": "index.html",
@@ -69,6 +70,10 @@
     },
     {
       "path": "images",
+      "addressable": true
+    },
+    {
+      "path": "CHANGELOG.md",
       "addressable": true
     }
   ],
