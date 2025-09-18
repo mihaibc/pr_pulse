@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "pr-pulse",
   "name": "PR Pulse",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "publisher": "bacumi",
   "public": true,
   "tags": [

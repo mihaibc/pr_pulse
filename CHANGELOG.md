@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.8 - 2025-09-18
+- Honored Azure DevOps theme signals exclusively (no OS overrides) so light/dark/high-contrast modes stay in sync.
+- Polished light-mode variables to match the refined dynamic theming model.
+
 ## 1.0.7 - 2025-09-18
 - Added automatic light/dark theme support that follows the Azure DevOps theme settings.
 - Tuned colors for high-contrast readability across UI elements.

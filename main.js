@@ -43,18 +43,22 @@ function applyThemeClass(themeData) {
     let isDark = false;
     let isHighContrast = false;
 
-    if (normalized.includes("high-contrast")) {
+    const bodyClasses = document.body.classList;
+
+    if (bodyClasses.contains("theme-high-contrast") || normalized.includes("high-contrast")) {
         isHighContrast = true;
     }
 
-    if (normalized.includes("dark") || normalized.includes("night")) {
+    if (bodyClasses.contains("theme-dark")) {
+        isDark = true;
+    } else if (bodyClasses.contains("theme-light")) {
+        isDark = false;
+    } else if (normalized.includes("dark") || normalized.includes("night")) {
         isDark = true;
     } else if (normalized.includes("light")) {
         isDark = false;
     } else if (themeData && typeof themeData === "object" && "isDark" in themeData) {
         isDark = Boolean(themeData.isDark);
-    } else if (!themeName) {
-        isDark = Boolean(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
     }
 
     if (isHighContrast) {
