@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "pr-pulse",
   "name": "PR Pulse",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "bacumi",
   "public": true,
   "tags": [
@@ -16,7 +16,7 @@
   "links": [
     {
       "rel": "Repository",
-      "uri": "https://github.com/mihaibc/pr_dashboard"
+      "uri": "https://github.com/mihaibc/pr_pulse"
     },
     {
       "rel": "Support",
