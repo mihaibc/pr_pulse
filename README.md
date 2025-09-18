@@ -43,13 +43,14 @@ PR Pulse gives engineering managers, tech leads, and delivery teams immediate vi
 ## Getting Started
 
 1. **Install PR Pulse** from the Visual Studio Marketplace or your organization’s private gallery.
-2. **Grant the extension** access to Azure DevOps when prompted (requires the `vso.code` scope only).
+2. **Grant the extension** access to Azure DevOps when prompted (`vso.code` + `vso.settings` scopes).
 3. Navigate to **Repos ➜ Pull Requests ➜ PR Pulse** in the Azure DevOps navigation.
 4. Pin the hub to your project sidebar so the dashboard is one click away.
 
 ## Permissions & Security
 
-- Uses only the `vso.code` scope to read pull requests and repository metadata.
+- **`vso.code`** – Allows the dashboard to list repositories and pull requests so we can compute metrics and deep-link to PRs inside Azure Repos. Only read APIs are used.
+- **`vso.settings`** – Lets PR Pulse read the authenticated user’s theme preference from Azure DevOps so the dashboard matches the host light/dark/high-contrast theme. No personal settings are modified.
 - Honors Azure DevOps organization policies; no external services or telemetry calls.
 - Profiles and avatars are rendered from existing Azure DevOps identity URLs and never leave your tenant.
 

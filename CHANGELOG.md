@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.11 - 2025-09-18
+- Documented the new Azure DevOps theme permission (`vso.settings`) and updated README guidance for administrators.
+- Clarified permission messaging in marketplace collateral.
+
+## 1.0.10 - 2025-09-18
+- Expanded theme synchronization to update card and surface colors from Azure DevOps theme variables across the entire dashboard.
+- Confirmed packaging metadata for changelog and new scopes prior to Marketplace submission.
+
 ## 1.0.9 - 2025-09-18
 - Fetched the signed-in user’s theme via Azure DevOps settings service for 100% alignment with their DevOps UI.
 - Added changelog packaging so the Marketplace shows release notes alongside the extension.

@@ -14,6 +14,7 @@ const THEME_CLASS_DARK = "pr-theme-dark";
 const THEME_CLASS_HIGH_CONTRAST = "pr-theme-high-contrast";
 let themeHandlingInitialized = false;
 let cachedThemeName = "";
+let customThemeStyleElement;
 
 SDK.init({ applyTheme: true, loaded: false });
 
@@ -36,6 +37,103 @@ function determineThemeName(themeData) {
     }
     const hostThemeClass = Array.from(document.body.classList).find((cls) => cls.startsWith("theme-"));
     return hostThemeClass || "";
+}
+
+function updateCustomThemeVariables(themeData) {
+    const rootStyle = document.documentElement.style;
+    const computed = getComputedStyle(document.documentElement);
+
+    const findThemeValue = (data, keys, cssVars, fallback) => {
+        if (data) {
+            for (const key of keys) {
+                const value = data[key];
+                if (typeof value === "string" && value.trim()) {
+                    return value.trim();
+                }
+            }
+        }
+        for (const cssVar of cssVars) {
+            const value = computed.getPropertyValue(cssVar);
+            if (value && value.trim()) {
+                return value.trim();
+            }
+        }
+        return fallback;
+    };
+
+    const map = {
+        "--canvas": findThemeValue(themeData, [
+            "backgroundColor",
+            "background-color",
+            "pageBackgroundColor",
+            "page-background-color",
+            "bodyBackgroundColor",
+            "primaryBackgroundColor"
+        ], ["--backgroundColor", "--background-color", "--pageBackgroundColor"], "#f3f2f1"),
+        "--surface": findThemeValue(themeData, [
+            "cardBackgroundColor",
+            "card-background-color",
+            "panelBackgroundColor",
+            "surfaceColor"
+        ], ["--cardBackgroundColor", "--card-background-color", "--surfaceColor"], "#ffffff"),
+        "--surface-subtle": findThemeValue(themeData, [
+            "cardBackgroundColorLighter",
+            "backgroundColorLighter",
+            "pageBackgroundColorLighter"
+        ], ["--cardBackgroundColorLighter", "--backgroundColorLighter"], "#f4f7f8"),
+        "--border": findThemeValue(themeData, [
+            "cardBorderColor",
+            "dividerColor",
+            "surfaceBorderColor"
+        ], ["--cardBorderColor", "--dividerColor"], "rgba(15, 23, 42, 0.08)"),
+        "--text-primary": findThemeValue(themeData, [
+            "textPrimaryColor",
+            "text-primary-color",
+            "textColor"
+        ], ["--text-primary-color", "--textPrimaryColor", "--textColor"], "#1f2933"),
+        "--text-muted": findThemeValue(themeData, [
+            "textSecondaryColor",
+            "text-muted-color",
+            "textSecondary"
+        ], ["--text-secondary-color", "--textSecondaryColor"], "#52606d"),
+        "--brand": findThemeValue(themeData, [
+            "primaryColor",
+            "primary-color",
+            "brandPrimaryColor"
+        ], ["--primaryColor", "--primary-color"], "#00897b"),
+        "--brand-dark": findThemeValue(themeData, [
+            "primaryColorDarker",
+            "primaryColorDark"
+        ], ["--primaryColorDarker"], "#00695c"),
+        "--accent": findThemeValue(themeData, [
+            "accentColor",
+            "accent-color"
+        ], ["--accentColor", "--accent-color"], "#ff6f3c"),
+        "--accent-dark": findThemeValue(themeData, [
+            "accentColorDarker",
+            "accentColorDark"
+        ], ["--accentColorDarker"], "#d94f1b")
+    };
+
+    const ensureStyle = () => {
+        if (!customThemeStyleElement) {
+            customThemeStyleElement = document.createElement("style");
+            customThemeStyleElement.type = "text/css";
+            document.head.appendChild(customThemeStyleElement);
+        }
+        return customThemeStyleElement;
+    };
+
+    const styleElement = ensureStyle();
+    const declarations = Object.entries(map)
+        .filter(([, value]) => typeof value === "string" && value)
+        .map(([name, value]) => `${name}: ${value}`)
+        .join("; ");
+    styleElement.innerText = declarations ? `:root { ${declarations} }` : "";
+
+    if (map["--text-primary"]) {
+        rootStyle.setProperty("color", map["--text-primary"]);
+    }
 }
 
 function applyThemeClass(themeData) {
@@ -77,6 +175,8 @@ function applyThemeClass(themeData) {
     document.body.classList.toggle(THEME_CLASS_DARK, isDark);
     document.body.classList.toggle(THEME_CLASS_LIGHT, !isDark);
     document.body.classList.toggle(THEME_CLASS_HIGH_CONTRAST, isHighContrast);
+
+    updateCustomThemeVariables(typeof themeData === "object" ? themeData : undefined);
 }
 
 async function fetchUserTheme(accountUri, accessToken) {
@@ -111,6 +211,9 @@ function setupThemeHandling() {
     applyThemeClass();
     window.addEventListener("themeChanged", (event) => {
         applyThemeClass(event?.detail?.data);
+    });
+    window.addEventListener("themeApplied", (event) => {
+        applyThemeClass(event?.detail);
     });
 }
 
