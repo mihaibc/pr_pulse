@@ -1,0 +1,23 @@
+# Node dependencies
+node_modules/
+
+# Build outputs
+*.vsix
+
+# Logs and diagnostics
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor state
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Coverage or test artifacts
+coverage/
+
+# Environment / secrets
+.env
+.env.local

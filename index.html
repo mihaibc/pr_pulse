@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PR Pulse</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --surface: #ffffff;
+            --surface-subtle: #f4f7f8;
+            --surface-dark: rgba(16, 24, 32, 0.04);
+            --border: rgba(15, 23, 42, 0.08);
+            --text-primary: #1f2933;
+            --text-muted: #52606d;
+            --brand: #00897b;
+            --brand-dark: #00695c;
+            --accent: #ff6f3c;
+            --accent-dark: #d94f1b;
+            --warning-fg: #d45a1f;
+            --warning-bg: rgba(255, 159, 99, 0.32);
+            --danger-fg: #c0392b;
+            --danger-bg: rgba(244, 67, 54, 0.28);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 16px;
+        }
+
+        body {
+            margin: 0;
+            background: #f3f2f1;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px 48px;
+        }
+
+        .page-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 0 6px 0;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            max-width: 520px;
+        }
+
+        .updated-chip {
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: var(--surface-subtle);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 18px 20px;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+            border: 1px solid transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metric-card.warning {
+            border-color: rgba(255, 159, 99, 0.45);
+            background: linear-gradient(135deg, rgba(255, 176, 122, 0.26), rgba(255, 243, 233, 0.7));
+        }
+
+        .metric-card.danger {
+            border-color: rgba(244, 67, 54, 0.4);
+            background: linear-gradient(135deg, rgba(244, 119, 108, 0.32), rgba(255, 228, 224, 0.75));
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .pr-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .repo-group {
+            background: var(--surface);
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            box-shadow: 0 24px 44px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .repo-group:not([open]) {
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .repo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            background: linear-gradient(90deg, rgba(0, 137, 123, 0.12), rgba(255, 111, 60, 0.16));
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 1.1rem;
+            list-style: none;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .repo-header::-webkit-details-marker {
+            display: none;
+        }
+
+        .repo-header::after {
+            content: '';
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            margin-left: 12px;
+            border-radius: 50%;
+            background: rgba(0, 137, 123, 0.16);
+            position: relative;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .repo-header::after {
+            transform: rotate(0deg);
+        }
+
+        .repo-header::after {
+            box-shadow: inset 0 0 0 1px rgba(0, 137, 123, 0.12);
+        }
+
+        .repo-header:focus-visible::after,
+        .repo-header:hover::after {
+            background: rgba(255, 111, 60, 0.18);
+        }
+
+        .repo-header::after {
+            content: '';
+        }
+
+        .repo-header::after {
+            transform-origin: center;
+        }
+
+        .repo-header::after {
+            background-position: center;
+        }
+
+        .repo-header::after {
+            background-repeat: no-repeat;
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10L12 15L17 10' stroke='%2300695C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        }
+
+        .repo-group:not([open]) > .repo-header::after {
+            transform: rotate(-90deg);
+        }
+
+        .repo-counts {
+            display: inline-flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .repo-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            background: rgba(0, 137, 123, 0.14);
+            border-radius: 999px;
+            padding: 4px 10px;
+        }
+
+        .repo-count.ready {
+            color: var(--brand);
+        }
+
+        .repo-count.draft {
+            color: var(--text-muted);
+            background: rgba(82, 96, 109, 0.16);
+        }
+
+        .repo-count strong {
+            color: inherit;
+        }
+
+        .repo-content {
+            padding: 20px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            background: var(--surface);
+        }
+
+        .pr-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 18px;
+        }
+
+        .pr-list-drafts {
+            margin-top: 12px;
+        }
+
+        .pr-item {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: var(--surface-subtle);
+            border-radius: 14px;
+            padding: 18px;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+            transition: transform 0.15s ease, box-shadow 0.2s ease;
+        }
+
+        .pr-item.is-draft {
+            border-style: dashed;
+        }
+
+        .pr-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 28px rgba(37, 99, 235, 0.16);
+        }
+
+        .pr-item.severity-warning {
+            border-color: rgba(255, 145, 77, 0.55);
+            background: rgba(255, 188, 141, 0.28);
+        }
+
+        .pr-item.severity-danger {
+            border-color: rgba(244, 67, 54, 0.65);
+            background: rgba(244, 143, 177, 0.25);
+        }
+
+        .pr-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .pr-title {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--brand);
+            text-decoration: none;
+        }
+
+        .pr-title:hover,
+        .pr-title:focus-visible {
+            color: var(--brand-dark);
+            text-decoration: underline;
+        }
+
+        .pr-badges {
+            display: inline-flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .badge.info {
+            background: rgba(0, 137, 123, 0.16);
+            color: var(--brand);
+        }
+
+        .badge.warning {
+            background: var(--warning-bg);
+            color: var(--warning-fg);
+        }
+
+        .badge.danger {
+            background: var(--danger-bg);
+            color: var(--danger-fg);
+        }
+
+        .badge.draft {
+            background: rgba(0, 137, 123, 0.12);
+            color: var(--brand);
+        }
+
+        .pr-meta {
+            display: grid;
+            gap: 10px;
+            font-size: 0.92rem;
+            color: var(--text-muted);
+        }
+
+        .pr-meta-row {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 12px;
+        }
+
+        .pr-meta-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .pr-meta-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+        }
+
+        .creator-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1.3;
+        }
+
+        .text-subtle {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .branch-flow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .branch-chip {
+            background: rgba(0, 137, 123, 0.12);
+            color: var(--brand-dark);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 0.82rem;
+            font-family: "SFMono-Regular", "Segoe UI Mono", "Roboto Mono", Menlo, monospace;
+        }
+
+        .drafts-section {
+            border: 1px dashed rgba(0, 137, 123, 0.25);
+            border-radius: 12px;
+            padding: 0 16px 16px;
+            background: rgba(0, 137, 123, 0.05);
+        }
+
+        .drafts-section summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 4px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .drafts-section summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .drafts-section summary::after {
+            content: '';
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            margin-left: 12px;
+            border-radius: 50%;
+            background: rgba(82, 96, 109, 0.12);
+            box-shadow: inset 0 0 0 1px rgba(82, 96, 109, 0.18);
+            transition: transform 0.2s ease, background 0.2s ease;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9 6L15 12L9 18' stroke='%2352606D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        }
+
+        .drafts-section summary:hover::after,
+        .drafts-section summary:focus-visible::after {
+            background: rgba(0, 137, 123, 0.12);
+        }
+
+        .drafts-section[open] summary::after {
+            transform: rotate(90deg);
+        }
+
+        .empty-subsection {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(82, 96, 109, 0.08);
+            color: var(--text-muted);
+            font-size: 0.92rem;
+        }
+
+        .pr-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .review-button {
+            background-color: var(--brand);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+
+        .review-button:hover,
+        .review-button:focus-visible {
+            background-color: var(--brand-dark);
+            transform: translateY(-1px);
+        }
+
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 48px 0;
+            color: var(--text-muted);
+        }
+
+        .loading-state .spinner {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            border: 3px solid rgba(0, 137, 123, 0.22);
+            border-right-color: var(--accent);
+            animation: spin 0.9s linear infinite;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 52px 0;
+            color: var(--text-muted);
+        }
+
+        .empty-state strong {
+            display: block;
+            font-size: 1.15rem;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .error-state {
+            color: var(--danger-fg);
+            background: var(--danger-bg);
+            border-radius: 12px;
+            padding: 18px 20px;
+            border: 1px solid rgba(244, 67, 54, 0.4);
+            text-align: center;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 720px) {
+            .pr-meta-row {
+                grid-template-columns: 1fr;
+            }
+
+            .repo-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="page-header">
+            <div>
+                <h1 id="page-title">Active Pull Requests</h1>
+                <p class="subtitle">Stay on top of every review happening across repositories in this project.</p>
+            </div>
+            <span class="updated-chip" id="updated-at" aria-live="polite">Gathering updates…</span>
+        </header>
+
+        <section class="metric-grid" aria-label="Pull request summary">
+            <article class="metric-card" aria-live="polite">
+                <span class="metric-label">Total Active PRs</span>
+                <span class="metric-value" id="metric-total">0</span>
+            </article>
+            <article class="metric-card warning" aria-live="polite">
+                <span class="metric-label">Over 2 Days</span>
+                <span class="metric-value" id="metric-warning">0</span>
+            </article>
+            <article class="metric-card danger" aria-live="polite">
+                <span class="metric-label">Over 5 Days</span>
+                <span class="metric-value" id="metric-danger">0</span>
+            </article>
+        </section>
+
+        <div id="pr-container" class="pr-container">
+            <div id="loading" class="loading-state" role="status" aria-live="polite">
+                <div class="spinner"></div>
+                <p>Loading pull requests…</p>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+</html>

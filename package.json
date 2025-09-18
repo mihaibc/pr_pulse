@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "azure-devops-extension-sdk": "^4.1.0"
+  },
+  "name": "pr_dashboard",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node tests/helpers.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mihaibc/pr_dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/mihaibc/pr_dashboard/issues"
+  },
+  "homepage": "https://github.com/mihaibc/pr_dashboard#readme"
+}
