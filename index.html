@@ -148,7 +148,9 @@
 
         .repo-header::after {
             content: '';
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             width: 24px;
             height: 24px;
             margin-left: 12px;
@@ -156,6 +158,7 @@
             background: rgba(0, 137, 123, 0.16);
             position: relative;
             transition: transform 0.2s ease, background 0.2s ease;
+            background-size: 12px 12px;
         }
 
         .repo-header::after {
@@ -357,6 +360,107 @@
             overflow-wrap: anywhere;
         }
 
+        .pr-supplementary {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .pr-checks {
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(0, 137, 123, 0.12);
+            color: var(--brand-dark);
+        }
+
+        .pr-checks.status-success {
+            background: rgba(34, 197, 94, 0.18);
+            color: #15803d;
+        }
+
+        .pr-checks.status-warning {
+            background: rgba(2, 132, 199, 0.18);
+            color: #0369a1;
+        }
+
+        .pr-checks.status-failure {
+            background: rgba(220, 38, 38, 0.18);
+            color: #b91c1c;
+        }
+
+        .pr-reviewers {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pr-reviewers .section-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .reviewer-list {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reviewer-chip {
+            position: relative;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.12);
+        }
+
+        .reviewer-chip img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .reviewer-status {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid var(--surface);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 10px 10px;
+        }
+
+        .reviewer-chip--approved .reviewer-status {
+            background-color: #16a34a;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 6L9 17L4 12' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        }
+
+        .reviewer-chip--pending .reviewer-status {
+            background-color: #0284c7;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 6V12L16 14' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        }
+
+        .reviewer-chip--rejected .reviewer-status {
+            background-color: #dc2626;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 7L17 17M17 7L7 17' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E");
+        }
+
+        .reviewer-list-empty {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
         .avatar {
             width: 28px;
             height: 28px;
@@ -421,7 +525,9 @@
 
         .drafts-section summary::after {
             content: '';
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             width: 22px;
             height: 22px;
             margin-left: 12px;
@@ -431,6 +537,7 @@
             transition: transform 0.2s ease, background 0.2s ease;
             background-repeat: no-repeat;
             background-position: center;
+            background-size: 12px 12px;
             background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9 6L15 12L9 18' stroke='%2352606D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
         }
 

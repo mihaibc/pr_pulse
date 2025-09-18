@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "pr-pulse-dev",
   "name": "PR Pulse Dev",
-  "version": "1.0.14",
+  "version": "1.0.17",
   "publisher": "bacumi",
   "public": false,
   "tags": [
@@ -42,17 +42,17 @@
     }
   },
   "links": {
-        "getstarted": {
-            "uri": "https://github.com/mihaibc/pr_pulse"
-        },
-        "support": {
-            "uri": "mailto:contact@bacumi.com"
-        }
+    "getstarted": {
+      "uri": "https://github.com/mihaibc/pr_pulse"
     },
+    "support": {
+      "uri": "mailto:contact@bacumi.com"
+    }
+  },
   "repository": {
-        "type": "git",
-        "uri": "https://github.com/mihaibc/pr_pulse"
-    },
+    "type": "git",
+    "uri": "https://github.com/mihaibc/pr_pulse"
+  },
   "files": [
     {
       "path": "index.html",

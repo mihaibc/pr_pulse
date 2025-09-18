@@ -1,7 +1,9 @@
 # Changelog
 
 ## 1.0.14 - 2025-09-18
-- Placeholder entry for upcoming fixes (theme refinements, layout alignments, error handling tweaks).
+- Centered the repo toggle chevron within its circular button across light/dark themes.
+- Added incremental loading so repositories render in batches for faster first paint.
+- Surfaced pull-request checks and reviewer status badges directly on each card.
 
 ## 1.0.13 - 2025-09-18
 - Prevented PR cards from overlapping by limiting grids to two columns and improving text wrapping on titles, branches, and metadata.

@@ -286,7 +286,11 @@ function createPrListItem(pr, options) {
         repoWebUrl,
         metrics,
         includeInMetrics = true,
-        markDraft = false
+        markDraft = false,
+        repoId,
+        projectBaseUrl,
+        accessToken,
+        fetchDetails = false
     } = options;
 
     const prItem = document.createElement("li");
@@ -424,8 +428,134 @@ function createPrListItem(pr, options) {
 
     prFooter.appendChild(reviewButton);
 
-    prItem.append(prHeader, prMeta, prFooter);
+    const supplementary = document.createElement("div");
+    supplementary.className = "pr-supplementary";
+
+    const checksBadge = document.createElement("div");
+    checksBadge.className = "pr-checks";
+    checksBadge.textContent = fetchDetails ? "Checks: loading…" : "Checks: unavailable";
+    supplementary.appendChild(checksBadge);
+
+    const reviewersContainer = document.createElement("div");
+    reviewersContainer.className = "pr-reviewers";
+    const reviewersLabel = document.createElement("span");
+    reviewersLabel.className = "section-label";
+    reviewersLabel.textContent = "Reviewers";
+    const reviewersList = document.createElement("div");
+    reviewersList.className = "reviewer-list reviewer-list-empty";
+    reviewersList.textContent = fetchDetails ? "Loading…" : "Unavailable";
+    reviewersContainer.append(reviewersLabel, reviewersList);
+    supplementary.appendChild(reviewersContainer);
+
+    prItem.append(prHeader, prMeta, supplementary, prFooter);
+
+    if (fetchDetails && repoId && projectBaseUrl && accessToken) {
+        hydratePrExtras(pr, {
+            repoId,
+            projectBaseUrl,
+            accessToken,
+            checksBadge,
+            reviewersList
+        }).catch((error) => {
+            console.warn("Failed to hydrate PR extras", error);
+            checksBadge.textContent = "Checks unavailable";
+            reviewersList.textContent = "Reviewers unavailable";
+        });
+    } else {
+        supplementary.style.display = "none";
+    }
+
     return prItem;
+}
+
+async function hydratePrExtras(pr, context) {
+    const { repoId, projectBaseUrl, accessToken, checksBadge, reviewersList } = context;
+
+    try {
+        const statusData = await fetchJson(
+            `${projectBaseUrl}/_apis/git/repositories/${repoId}/pullRequests/${pr.pullRequestId}/statuses?api-version=7.1-preview.1`,
+            accessToken,
+            { context: `statuses:${repoId}:${pr.pullRequestId}` }
+        );
+
+        const statuses = Array.isArray(statusData.value) ? statusData.value : [];
+        checksBadge.classList.remove('status-success', 'status-warning', 'status-failure');
+        if (!statuses.length) {
+            checksBadge.textContent = "Checks: none";
+        } else {
+            const succeeded = statuses.filter((s) => (s.state || '').toLowerCase() === 'succeeded').length;
+            const failed = statuses.filter((s) => (s.state || '').toLowerCase() === 'failed').length;
+            const total = statuses.length;
+            const pending = total - succeeded - failed;
+
+            checksBadge.textContent = `Checks: ${succeeded}/${total} passed`;
+
+            if (failed > 0) {
+                checksBadge.classList.add('status-failure');
+            } else if (pending > 0) {
+                checksBadge.classList.add('status-warning');
+            } else {
+                checksBadge.classList.add('status-success');
+            }
+        }
+    } catch (error) {
+        console.warn('Failed to load PR checks', error);
+        checksBadge.textContent = 'Checks unavailable';
+    }
+
+    try {
+        let reviewers = Array.isArray(pr.reviewers) ? pr.reviewers : [];
+        if (!reviewers.length) {
+            const reviewerData = await fetchJson(
+                `${projectBaseUrl}/_apis/git/repositories/${repoId}/pullRequests/${pr.pullRequestId}/reviewers?api-version=7.1-preview.1`,
+                accessToken,
+                { context: `reviewers:${repoId}:${pr.pullRequestId}` }
+            );
+            reviewers = Array.isArray(reviewerData.value) ? reviewerData.value : [];
+        }
+
+        reviewersList.classList.remove('reviewer-list-empty');
+        reviewersList.textContent = '';
+
+        if (!reviewers.length) {
+            reviewersList.classList.add('reviewer-list-empty');
+            reviewersList.textContent = 'No reviewers';
+            return;
+        }
+
+        reviewers.forEach((reviewer) => {
+            const chip = document.createElement('span');
+            chip.className = 'reviewer-chip';
+
+            const img = document.createElement('img');
+            img.src = reviewer.imageUrl || '';
+            img.alt = reviewer.displayName || 'Reviewer';
+            img.loading = 'lazy';
+            chip.appendChild(img);
+
+            const status = document.createElement('span');
+            status.className = 'reviewer-status';
+
+            const vote = typeof reviewer.vote === 'number' ? reviewer.vote : 0;
+            if (vote >= 10) {
+                chip.classList.add('reviewer-chip--approved');
+                status.title = 'Approved';
+            } else if (vote <= -10) {
+                chip.classList.add('reviewer-chip--rejected');
+                status.title = 'Rejected';
+            } else {
+                chip.classList.add('reviewer-chip--pending');
+                status.title = 'Waiting';
+            }
+
+            chip.appendChild(status);
+            reviewersList.appendChild(chip);
+        });
+    } catch (error) {
+        console.warn('Failed to load reviewers', error);
+        reviewersList.classList.add('reviewer-list-empty');
+        reviewersList.textContent = 'Reviewers unavailable';
+    }
 }
 
 function setMetrics(values) {
@@ -534,7 +664,7 @@ async function loadPullRequests() {
             loadingIndicator.remove();
         }
 
-        if (repositories.length === 0) {
+        if (!repositories.length) {
             prContainer.innerHTML = '<div class="empty-state"><strong>No repositories found.</strong><span>Add a repository or adjust project context to see pull requests.</span></div>';
             setMetrics({ total: 0, warning: 0, danger: 0 });
             updateTimestamp(now);
@@ -542,65 +672,32 @@ async function loadPullRequests() {
             return;
         }
 
-        const repoResults = [];
         const skippedRepos = [];
-
-        for (const repo of repositories) {
-            if (repo.isDisabled || repo.isInMaintenance) {
-                skippedRepos.push(repo.name || repo.id);
-                continue;
-            }
-            try {
-                const prUrl = `${projectBaseUrl}/_apis/git/pullrequests?searchCriteria.repositoryId=${repo.id}&searchCriteria.status=active&api-version=${apiVersion}`;
-                const prData = await fetchJson(prUrl, accessToken, {
-                    context: `pullrequests:${repo.id}`
-                });
-                repoResults.push({ repo, prs: Array.isArray(prData.value) ? prData.value : [] });
-            } catch (repoError) {
-                const repoName = repo.name || repo.id;
-                console.warn(`Skipping repository ${repoName}:`, repoError);
-                skippedRepos.push(repoName);
-            }
-        }
-
-        const results = repoResults.sort((a, b) => a.repo.name.localeCompare(b.repo.name));
+        const metrics = { total: 0, warning: 0, danger: 0 };
+        let hasAnyPrs = false;
+        const BATCH_SIZE = 5;
 
         prContainer.innerHTML = "";
 
-        let skippedCard;
-
-        const metrics = { total: 0, warning: 0, danger: 0 };
-        let hasAnyPrs = false;
-
-        const fragment = document.createDocumentFragment();
-
-        for (const result of results) {
-            const activePrs = result.prs.filter((pr) => {
+        const renderRepository = (entry) => {
+            const activePrs = (entry.prs || []).filter((pr) => {
                 if (!pr) {
                     return false;
                 }
-
                 const status = typeof pr.status === "string" ? pr.status.toLowerCase() : "active";
                 return status === "active";
             });
 
             if (!activePrs.length) {
-                continue;
+                return null;
             }
 
             const readyPrs = [];
             const draftPrs = [];
-
-            activePrs.forEach((pr) => {
-                if (pr && pr.isDraft) {
-                    draftPrs.push(pr);
-                } else {
-                    readyPrs.push(pr);
-                }
-            });
+            activePrs.forEach((pr) => (pr && pr.isDraft ? draftPrs : readyPrs).push(pr));
 
             if (!readyPrs.length && !draftPrs.length) {
-                continue;
+                return null;
             }
 
             hasAnyPrs = true;
@@ -613,7 +710,7 @@ async function loadPullRequests() {
             repoHeader.className = "repo-header";
 
             const repoTitle = document.createElement("span");
-            repoTitle.textContent = result.repo.name;
+            repoTitle.textContent = entry.repo.name;
 
             const repoCounts = document.createElement("div");
             repoCounts.className = "repo-counts";
@@ -634,21 +731,25 @@ async function loadPullRequests() {
 
             const repoContent = document.createElement("div");
             repoContent.className = "repo-content";
-
-            const repoWebUrl = result.repo.webUrl ? trimTrailingSlash(result.repo.webUrl) : "";
+            const repoWebUrl = entry.repo.webUrl ? trimTrailingSlash(entry.repo.webUrl) : "";
 
             if (readyPrs.length) {
                 const readyList = document.createElement("ul");
                 readyList.className = "pr-list";
                 readyPrs.forEach((pr) => {
-                    const item = createPrListItem(pr, {
-                        now,
-                        repoWebUrl,
-                        metrics,
-                        includeInMetrics: true,
-                        markDraft: false
-                    });
-                    readyList.appendChild(item);
+                    readyList.appendChild(
+                        createPrListItem(pr, {
+                            now,
+                            repoWebUrl,
+                            metrics,
+                            includeInMetrics: true,
+                            markDraft: false,
+                            repoId: entry.repo.id,
+                            projectBaseUrl,
+                            accessToken,
+                            fetchDetails: true
+                        })
+                    );
                 });
                 repoContent.appendChild(readyList);
             } else {
@@ -671,21 +772,63 @@ async function loadPullRequests() {
                 const draftsList = document.createElement("ul");
                 draftsList.className = "pr-list pr-list-drafts";
                 draftPrs.forEach((pr) => {
-                    const item = createPrListItem(pr, {
-                        now,
-                        repoWebUrl,
-                        metrics,
-                        includeInMetrics: false,
-                        markDraft: true
-                    });
-                    draftsList.appendChild(item);
+                    draftsList.appendChild(
+                        createPrListItem(pr, {
+                            now,
+                            repoWebUrl,
+                            metrics,
+                            includeInMetrics: false,
+                            markDraft: true,
+                            repoId: entry.repo.id,
+                            projectBaseUrl,
+                            accessToken,
+                            fetchDetails: true
+                        })
+                    );
                 });
                 draftsDetails.appendChild(draftsList);
                 repoContent.appendChild(draftsDetails);
             }
 
             repoGroup.append(repoHeader, repoContent);
-            fragment.appendChild(repoGroup);
+            return repoGroup;
+        };
+
+        for (let i = 0; i < repositories.length; i += BATCH_SIZE) {
+            const batch = repositories.slice(i, i + BATCH_SIZE);
+            const batchFragment = document.createDocumentFragment();
+
+            await Promise.all(
+                batch.map(async (repo) => {
+                    if (repo.isDisabled || repo.isInMaintenance) {
+                        skippedRepos.push(repo.name || repo.id);
+                        return;
+                    }
+                    try {
+                        const prUrl = `${projectBaseUrl}/_apis/git/pullrequests?searchCriteria.repositoryId=${repo.id}&searchCriteria.status=active&api-version=${apiVersion}`;
+                        const prData = await fetchJson(prUrl, accessToken, {
+                            context: `pullrequests:${repo.id}`
+                        });
+                        const entry = { repo, prs: Array.isArray(prData.value) ? prData.value : [] };
+                        const node = renderRepository(entry);
+                        if (node) {
+                            batchFragment.appendChild(node);
+                        }
+                    } catch (repoError) {
+                        const repoName = repo.name || repo.id;
+                        console.warn(`Skipping repository ${repoName}:`, repoError);
+                        skippedRepos.push(repoName);
+                    }
+                })
+            );
+
+            if (batchFragment.childNodes.length) {
+                prContainer.appendChild(batchFragment);
+                setMetrics(metrics);
+                updateTimestamp(new Date());
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 0));
         }
 
         if (!hasAnyPrs) {
@@ -695,12 +838,7 @@ async function loadPullRequests() {
                 skippedRepos.length === repositories.length
                     ? '<strong>No accessible repositories</strong><span>You may not have permission to view pull requests in this project.</span>'
                     : '<strong>No active pull requests 🎉</strong><span>Everything is up to date. Check back later for new activity.</span>';
-            fragment.appendChild(emptyState);
-            setMetrics({ total: 0, warning: 0, danger: 0 });
-            updateTimestamp(now);
-            SDK.notifyLoadSucceeded();
-        } else {
-            prContainer.appendChild(fragment);
+            prContainer.appendChild(emptyState);
         }
 
         if (skippedRepos.length) {
@@ -722,11 +860,8 @@ async function loadPullRequests() {
             prContainer.appendChild(skippedDetails);
         }
 
-        if (!hasAnyPrs) {
-            prContainer.appendChild(fragment);
-        }
         setMetrics(metrics);
-        updateTimestamp(now);
+        updateTimestamp(new Date());
         SDK.notifyLoadSucceeded();
     } catch (error) {
         console.error(error);
