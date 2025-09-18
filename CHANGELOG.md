@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.9 - 2025-09-18
+- Fetched the signed-in user’s theme via Azure DevOps settings service for 100% alignment with their DevOps UI.
+- Added changelog packaging so the Marketplace shows release notes alongside the extension.
+
 ## 1.0.8 - 2025-09-18
 - Honored Azure DevOps theme signals exclusively (no OS overrides) so light/dark/high-contrast modes stay in sync.
 - Polished light-mode variables to match the refined dynamic theming model.

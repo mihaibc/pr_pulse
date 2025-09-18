@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "pr-pulse",
   "name": "PR Pulse",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "publisher": "bacumi",
   "public": true,
   "tags": [
@@ -26,7 +26,8 @@
     "default": "images/logo.png"
   },
   "scopes": [
-    "vso.code"
+    "vso.code",
+    "vso.settings"
   ],
   "content": {
     "details": {

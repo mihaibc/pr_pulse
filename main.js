@@ -13,6 +13,7 @@ const THEME_CLASS_LIGHT = "pr-theme-light";
 const THEME_CLASS_DARK = "pr-theme-dark";
 const THEME_CLASS_HIGH_CONTRAST = "pr-theme-high-contrast";
 let themeHandlingInitialized = false;
+let cachedThemeName = "";
 
 SDK.init({ applyTheme: true, loaded: false });
 
@@ -39,6 +40,14 @@ function determineThemeName(themeData) {
 
 function applyThemeClass(themeData) {
     const themeName = determineThemeName(themeData);
+    if (!themeName && cachedThemeName) {
+        return;
+    }
+
+    if (themeName) {
+        cachedThemeName = themeName;
+    }
+
     const normalized = (themeName || "").toLowerCase();
     let isDark = false;
     let isHighContrast = false;
@@ -68,6 +77,30 @@ function applyThemeClass(themeData) {
     document.body.classList.toggle(THEME_CLASS_DARK, isDark);
     document.body.classList.toggle(THEME_CLASS_LIGHT, !isDark);
     document.body.classList.toggle(THEME_CLASS_HIGH_CONTRAST, isHighContrast);
+}
+
+async function fetchUserTheme(accountUri, accessToken) {
+    try {
+        if (!accountUri || !accessToken) {
+            return "";
+        }
+        const url = `${trimTrailingSlash(accountUri)}/_apis/settings/entries/me/WebPlatform?api-version=7.1-preview.1`;
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "X-VSS-ForceMsaPassThrough": "true"
+            }
+        });
+        if (!response.ok) {
+            return "";
+        }
+        const json = await response.json();
+        const theme = json?.value?.Theme || json?.value?.theme;
+        return typeof theme === "string" ? theme : "";
+    } catch (error) {
+        console.error("Failed to fetch user theme", error);
+        return "";
+    }
 }
 
 function setupThemeHandling() {
@@ -352,6 +385,13 @@ async function loadPullRequests() {
 
         if (!accountUri) {
             throw new Error("Organization context is not available.");
+        }
+
+        if (!cachedThemeName) {
+            const fetchedTheme = await fetchUserTheme(accountUri, accessToken);
+            if (fetchedTheme) {
+                applyThemeClass(fetchedTheme);
+            }
         }
 
         const projectIdentifier = project.name || project.id;
