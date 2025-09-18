@@ -288,6 +288,7 @@ function createPrListItem(pr, options) {
         includeInMetrics = true,
         markDraft = false,
         repoId,
+        projectId,
         projectBaseUrl,
         accessToken,
         fetchDetails = false
@@ -431,11 +432,6 @@ function createPrListItem(pr, options) {
     const supplementary = document.createElement("div");
     supplementary.className = "pr-supplementary";
 
-    const checksBadge = document.createElement("div");
-    checksBadge.className = "pr-checks";
-    checksBadge.textContent = fetchDetails ? "Checks: loading…" : "Checks: unavailable";
-    supplementary.appendChild(checksBadge);
-
     const reviewersContainer = document.createElement("div");
     reviewersContainer.className = "pr-reviewers";
     const reviewersLabel = document.createElement("span");
@@ -450,15 +446,14 @@ function createPrListItem(pr, options) {
     prItem.append(prHeader, prMeta, supplementary, prFooter);
 
     if (fetchDetails && repoId && projectBaseUrl && accessToken) {
-        hydratePrExtras(pr, {
+        hydrateReviewers(pr, {
             repoId,
+            projectId,
             projectBaseUrl,
             accessToken,
-            checksBadge,
             reviewersList
         }).catch((error) => {
-            console.warn("Failed to hydrate PR extras", error);
-            checksBadge.textContent = "Checks unavailable";
+            console.warn("Failed to hydrate reviewers", error);
             reviewersList.textContent = "Reviewers unavailable";
         });
     } else {
@@ -468,40 +463,9 @@ function createPrListItem(pr, options) {
     return prItem;
 }
 
-async function hydratePrExtras(pr, context) {
-    const { repoId, projectBaseUrl, accessToken, checksBadge, reviewersList } = context;
 
-    try {
-        const statusData = await fetchJson(
-            `${projectBaseUrl}/_apis/git/repositories/${repoId}/pullRequests/${pr.pullRequestId}/statuses?api-version=7.1-preview.1`,
-            accessToken,
-            { context: `statuses:${repoId}:${pr.pullRequestId}` }
-        );
-
-        const statuses = Array.isArray(statusData.value) ? statusData.value : [];
-        checksBadge.classList.remove('status-success', 'status-warning', 'status-failure');
-        if (!statuses.length) {
-            checksBadge.textContent = "Checks: none";
-        } else {
-            const succeeded = statuses.filter((s) => (s.state || '').toLowerCase() === 'succeeded').length;
-            const failed = statuses.filter((s) => (s.state || '').toLowerCase() === 'failed').length;
-            const total = statuses.length;
-            const pending = total - succeeded - failed;
-
-            checksBadge.textContent = `Checks: ${succeeded}/${total} passed`;
-
-            if (failed > 0) {
-                checksBadge.classList.add('status-failure');
-            } else if (pending > 0) {
-                checksBadge.classList.add('status-warning');
-            } else {
-                checksBadge.classList.add('status-success');
-            }
-        }
-    } catch (error) {
-        console.warn('Failed to load PR checks', error);
-        checksBadge.textContent = 'Checks unavailable';
-    }
+async function hydrateReviewers(pr, context) {
+    const { repoId, projectBaseUrl, accessToken, reviewersList } = context;
 
     try {
         let reviewers = Array.isArray(pr.reviewers) ? pr.reviewers : [];

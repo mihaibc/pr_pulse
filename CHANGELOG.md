@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.15 - 2025-09-18
+- Surfaced reviewer avatars and vote status directly in each PR card, and removed the experimental checks UI pending full support.
+
 ## 1.0.14 - 2025-09-18
 - Centered the repo toggle chevron within its circular button across light/dark themes.
 - Added incremental loading so repositories render in batches for faster first paint.
