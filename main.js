@@ -9,7 +9,75 @@ import {
     resolveOrganizationUrl
 } from "./helpers.js";
 
+const THEME_CLASS_LIGHT = "pr-theme-light";
+const THEME_CLASS_DARK = "pr-theme-dark";
+const THEME_CLASS_HIGH_CONTRAST = "pr-theme-high-contrast";
+let themeHandlingInitialized = false;
+
 SDK.init({ applyTheme: true, loaded: false });
+
+function determineThemeName(themeData) {
+    if (typeof themeData === "string") {
+        return themeData;
+    }
+    if (themeData && typeof themeData === "object") {
+        return (
+            themeData.themeName ||
+            themeData.name ||
+            themeData.id ||
+            (themeData.baseTheme && themeData.baseTheme.name) ||
+            ""
+        );
+    }
+    const attr = document.body.getAttribute("data-vss-theme") || document.body.dataset.vssTheme;
+    if (attr) {
+        return attr;
+    }
+    const hostThemeClass = Array.from(document.body.classList).find((cls) => cls.startsWith("theme-"));
+    return hostThemeClass || "";
+}
+
+function applyThemeClass(themeData) {
+    const themeName = determineThemeName(themeData);
+    const normalized = (themeName || "").toLowerCase();
+    let isDark = false;
+    let isHighContrast = false;
+
+    if (normalized.includes("high-contrast")) {
+        isHighContrast = true;
+    }
+
+    if (normalized.includes("dark") || normalized.includes("night")) {
+        isDark = true;
+    } else if (normalized.includes("light")) {
+        isDark = false;
+    } else if (themeData && typeof themeData === "object" && "isDark" in themeData) {
+        isDark = Boolean(themeData.isDark);
+    } else if (!themeName) {
+        isDark = Boolean(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
+
+    if (isHighContrast) {
+        isDark = true;
+    }
+
+    document.body.classList.toggle(THEME_CLASS_DARK, isDark);
+    document.body.classList.toggle(THEME_CLASS_LIGHT, !isDark);
+    document.body.classList.toggle(THEME_CLASS_HIGH_CONTRAST, isHighContrast);
+}
+
+function setupThemeHandling() {
+    if (themeHandlingInitialized) {
+        return;
+    }
+    themeHandlingInitialized = true;
+    applyThemeClass();
+    window.addEventListener("themeChanged", (event) => {
+        applyThemeClass(event?.detail?.data);
+    });
+}
+
+setupThemeHandling();
 
 const metricEls = {
     total: document.getElementById("metric-total"),
@@ -261,6 +329,7 @@ async function fetchJson(url, accessToken) {
 
 async function loadPullRequests() {
     await SDK.ready();
+    applyThemeClass();
 
     const prContainer = document.getElementById("pr-container");
     const loadingIndicator = document.getElementById("loading");
