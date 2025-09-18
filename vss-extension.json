@@ -2,9 +2,31 @@
   "manifestVersion": 1,
   "id": "pr-pulse",
   "name": "PR Pulse",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "bacumi",
   "public": true,
+  "tags": [
+    "azure devops",
+    "pull requests",
+    "code review",
+    "dashboard",
+    "repos",
+    "staleness alerts"
+  ],
+  "links": [
+    {
+      "rel": "Repository",
+      "uri": "https://github.com/mihaibc/pr_dashboard"
+    },
+    {
+      "rel": "Support",
+      "uri": "mailto:contact@bacumi.com"
+    },
+    {
+      "rel": "Contact",
+      "uri": "mailto:contact@bacumi.com"
+    }
+  ],
   "targets": [
     {
       "id": "Microsoft.VisualStudio.Services"
@@ -23,6 +45,9 @@
   "content": {
     "details": {
       "path": "README.md"
+    },
+    "license": {
+      "path": "LICENSE"
     }
   },
   "files": [
