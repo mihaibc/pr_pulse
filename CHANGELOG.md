@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.12 - 2025-09-18
+- Enhanced error handling to skip archived or inaccessible repositories while continuing to render accessible ones.
+- Logged skipped repository names/IDs to aid administrators when diagnosing permission gaps.
+- Added a collapsible “Skipped repositories” card and clearer empty-state messaging for permission-related scenarios.
+
 ## 1.0.11 - 2025-09-18
 - Documented the new Azure DevOps theme permission (`vso.settings`) and updated README guidance for administrators.
 - Clarified permission messaging in marketplace collateral.

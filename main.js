@@ -451,7 +451,8 @@ function updateTimestamp(date = new Date()) {
     updatedAtChip.title = date.toLocaleString();
 }
 
-async function fetchJson(url, accessToken) {
+async function fetchJson(url, accessToken, options = {}) {
+    const { context } = options;
     const response = await fetch(url, {
         headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -461,7 +462,15 @@ async function fetchJson(url, accessToken) {
 
     if (!response.ok) {
         const message = await response.text();
-        throw new Error(`${response.status} ${response.statusText}${message ? ` - ${message}` : ""}`);
+        const error = new Error(
+            `${response.status} ${response.statusText}${message ? ` - ${message}` : ""}${context ? ` (${context})` : ""}`
+        );
+        error.status = response.status;
+        error.statusText = response.statusText;
+        error.body = message;
+        error.url = url;
+        error.context = context;
+        throw error;
     }
 
     return response.json();
@@ -501,8 +510,25 @@ async function loadPullRequests() {
         const projectBaseUrl = `${trimTrailingSlash(accountUri)}/${encodeURIComponent(projectIdentifier)}`;
         const apiVersion = "7.1-preview.1";
 
-        const repoData = await fetchJson(`${projectBaseUrl}/_apis/git/repositories?api-version=${apiVersion}`, accessToken);
-        const repositories = Array.isArray(repoData.value) ? repoData.value : [];
+        let repositories = [];
+        try {
+            const repoData = await fetchJson(
+                `${projectBaseUrl}/_apis/git/repositories?api-version=${apiVersion}`,
+                accessToken,
+                { context: "repositories" }
+            );
+            repositories = Array.isArray(repoData.value) ? repoData.value : [];
+        } catch (repoListError) {
+            console.error("Failed to list repositories", repoListError);
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
+            prContainer.innerHTML = `<div class="error-state">Unable to load repositories: ${repoListError.message}</div>`;
+            setMetrics({ total: 0, warning: 0, danger: 0 });
+            updateTimestamp(now);
+            SDK.notifyLoadSucceeded();
+            return;
+        }
 
         if (loadingIndicator) {
             loadingIndicator.remove();
@@ -516,16 +542,32 @@ async function loadPullRequests() {
             return;
         }
 
-        const repoPromises = repositories.map(async (repo) => {
-            const prUrl = `${projectBaseUrl}/_apis/git/pullrequests?searchCriteria.repositoryId=${repo.id}&searchCriteria.status=active&api-version=${apiVersion}`;
-            const prData = await fetchJson(prUrl, accessToken);
-            return { repo, prs: Array.isArray(prData.value) ? prData.value : [] };
-        });
+        const repoResults = [];
+        const skippedRepos = [];
 
-        const results = await Promise.all(repoPromises);
-        results.sort((a, b) => a.repo.name.localeCompare(b.repo.name));
+        for (const repo of repositories) {
+            if (repo.isDisabled || repo.isInMaintenance) {
+                skippedRepos.push(repo.name || repo.id);
+                continue;
+            }
+            try {
+                const prUrl = `${projectBaseUrl}/_apis/git/pullrequests?searchCriteria.repositoryId=${repo.id}&searchCriteria.status=active&api-version=${apiVersion}`;
+                const prData = await fetchJson(prUrl, accessToken, {
+                    context: `pullrequests:${repo.id}`
+                });
+                repoResults.push({ repo, prs: Array.isArray(prData.value) ? prData.value : [] });
+            } catch (repoError) {
+                const repoName = repo.name || repo.id;
+                console.warn(`Skipping repository ${repoName}:`, repoError);
+                skippedRepos.push(repoName);
+            }
+        }
+
+        const results = repoResults.sort((a, b) => a.repo.name.localeCompare(b.repo.name));
 
         prContainer.innerHTML = "";
+
+        let skippedCard;
 
         const metrics = { total: 0, warning: 0, danger: 0 };
         let hasAnyPrs = false;
@@ -647,14 +689,42 @@ async function loadPullRequests() {
         }
 
         if (!hasAnyPrs) {
-            prContainer.innerHTML = '<div class="empty-state"><strong>No active pull requests 🎉</strong><span>Everything is up to date. Check back later for new activity.</span></div>';
+            const emptyState = document.createElement("div");
+            emptyState.className = "empty-state";
+            emptyState.innerHTML =
+                skippedRepos.length === repositories.length
+                    ? '<strong>No accessible repositories</strong><span>You may not have permission to view pull requests in this project.</span>'
+                    : '<strong>No active pull requests 🎉</strong><span>Everything is up to date. Check back later for new activity.</span>';
+            fragment.appendChild(emptyState);
             setMetrics({ total: 0, warning: 0, danger: 0 });
             updateTimestamp(now);
             SDK.notifyLoadSucceeded();
-            return;
+        } else {
+            prContainer.appendChild(fragment);
         }
 
-        prContainer.appendChild(fragment);
+        if (skippedRepos.length) {
+            const skippedDetails = document.createElement("details");
+            skippedDetails.className = "skipped-card";
+            skippedDetails.open = false;
+
+            const summary = document.createElement("summary");
+            summary.textContent = `Skipped repositories (${skippedRepos.length})`;
+            skippedDetails.appendChild(summary);
+
+            const list = document.createElement("ul");
+            skippedRepos.forEach((name) => {
+                const item = document.createElement("li");
+                item.textContent = name;
+                list.appendChild(item);
+            });
+            skippedDetails.appendChild(list);
+            prContainer.appendChild(skippedDetails);
+        }
+
+        if (!hasAnyPrs) {
+            prContainer.appendChild(fragment);
+        }
         setMetrics(metrics);
         updateTimestamp(now);
         SDK.notifyLoadSucceeded();
