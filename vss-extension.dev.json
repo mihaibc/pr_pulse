@@ -1,24 +1,25 @@
 {
   "manifestVersion": 1,
-  "id": "pr-pulse",
-  "name": "PR Pulse",
+  "id": "pr-pulse-dev",
+  "name": "PR Pulse Dev",
   "version": "1.0.14",
   "publisher": "bacumi",
-  "public": true,
+  "public": false,
   "tags": [
     "azure devops",
     "pull requests",
     "code review",
     "dashboard",
     "repos",
-    "staleness alerts"
+    "staleness alerts",
+    "dev"
   ],
   "targets": [
     {
       "id": "Microsoft.VisualStudio.Services"
     }
   ],
-  "description": "The intelligent dashboard for all active pull requests, with built-in staleness alerts to keep your team moving.",
+  "description": "[DEV BUILD] The intelligent dashboard for all active pull requests, with built-in staleness alerts to keep your team moving.",
   "categories": [
     "Azure Repos"
   ],
@@ -80,13 +81,13 @@
   ],
   "contributions": [
     {
-      "id": "pr-pulse-hub",
+      "id": "pr-pulse-dev-hub",
       "type": "ms.vss-web.hub",
       "targets": [
         "ms.vss-code-web.code-hub-group"
       ],
       "properties": {
-        "name": "PR Pulse",
+        "name": "PR Pulse Dev",
         "icon": "images/hub-icon.png",
         "uri": "index.html",
         "order": 35
