@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.13 - 2025-09-18
+- Prevented PR cards from overlapping by limiting grids to two columns and improving text wrapping on titles, branches, and metadata.
+- Tuned responsive rules so the dashboard gracefully stacks to a single column on small screens.
+
 ## 1.0.12 - 2025-09-18
 - Enhanced error handling to skip archived or inaccessible repositories while continuing to render accessible ones.
 - Logged skipped repository names/IDs to aid administrators when diagnosing permission gaps.
