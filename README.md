@@ -69,6 +69,39 @@ PR Pulse gives engineering managers, tech leads, and delivery teams immediate vi
 
 Have feedback or want to see a new capability? Open an issue or reach out via the publisher contact on the Marketplace listing.
 
+## Local Debugging
+
+Run the extension straight from your workstation while iterating on the UI:
+
+1. Install and trust mkcert’s local CA (required once per machine):
+   ```bash
+   brew install mkcert
+   mkcert -install
+   ```
+2. Generate a local HTTPS certificate (`localhost-cert.pem` and `localhost-key.pem`) inside `dev-certs/`. Point the `DEV_CERT_PATH`/`DEV_KEY_PATH` env vars to alternate locations if you keep the files elsewhere.
+   ```bash
+   mkdir -p dev-certs
+   mkcert -key-file dev-certs/localhost-key.pem -cert-file dev-certs/localhost-cert.pem 127.0.0.1 localhost
+   ```
+3. Start the static host with `npm run dev`. By default it serves the repository at `https://127.0.0.1:3000` with caching disabled.
+4. Ensure `vss-extension.dev.json` has `baseUri` pointing at the origin from the previous step (the repo ships with the same default).
+5. Publish the dev manifest (`scripts/publish-dev.sh`) so Azure DevOps pulls the assets from your machine while you debug.
+
+Set `AZURE_DEVOPS_EXT_PAT` (scope: Extension Management) before running the publish script. The terminal prints the exact URL and highlights how to stop the server. Trust the certificate once in your browser so the Azure DevOps iframe can load it without warnings.
+
+## Package & Publish
+
+Need a `.vsix` for testing or release?
+
+- **Dev channel:** `./scripts/publish-dev.sh` bumps the dev manifest, creates a VSIX, and publishes it privately to the signed-in account.
+- **Manual package:**
+  ```bash
+  npx tfx-cli extension create --manifest-globs vss-extension.json --output-path dist
+  ```
+  The VSIX appears under `dist/`. Upload it through the Azure DevOps portal or the Marketplace publisher dashboard.
+
+Remember to clean out `dist/*.vsix` after validating the package.
+
 ## Support
 
 - **Publisher**: bacumi

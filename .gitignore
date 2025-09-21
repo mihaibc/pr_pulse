@@ -21,3 +21,4 @@ coverage/
 # Environment / secrets
 .env
 .env.local
+dev-certs/

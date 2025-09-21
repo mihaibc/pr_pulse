@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "id": "pr-pulse-dev",
   "name": "PR Pulse Dev",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "publisher": "bacumi",
   "public": false,
   "tags": [
@@ -30,6 +30,7 @@
     "vso.code",
     "vso.settings"
   ],
+  "baseUri": "https://127.0.0.1:3000",
   "content": {
     "details": {
       "path": "README.md"
