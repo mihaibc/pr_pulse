@@ -64,6 +64,14 @@
       "addressable": true
     },
     {
+      "path": "styles",
+      "addressable": true
+    },
+    {
+      "path": "src",
+      "addressable": true
+    },
+    {
       "path": "helpers.js",
       "addressable": true
     },
