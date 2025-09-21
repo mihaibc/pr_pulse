@@ -71,6 +71,7 @@ async function testRenderRepositoryGroups() {
         const projectBaseUrl = 'https://dev.azure.com/contoso/project';
         const repoId = 'repo-1';
         const prId = 42;
+        const projectId = '00000000-0000-0000-0000-000000000042';
 
         const responses = new Map();
         const prsResponse = {
@@ -101,6 +102,7 @@ async function testRenderRepositoryGroups() {
 
         const prsUrl = `${projectBaseUrl}/_apis/git/pullrequests?searchCriteria.repositoryId=${repoId}&searchCriteria.status=active&api-version=7.1-preview.1`;
         const reviewersUrl = `${projectBaseUrl}/_apis/git/repositories/${repoId}/pullRequests/${prId}/reviewers?api-version=7.1-preview.1`;
+        const artifactId = encodeURIComponent(`vstfs:///CodeReview/CodeReviewId/${projectId}/${prId}`);
         responses.set(prsUrl, createJsonResponse(prsResponse));
         responses.set(reviewersUrl, createJsonResponse(reviewersResponse));
 
@@ -116,7 +118,8 @@ async function testRenderRepositoryGroups() {
             {
                 id: repoId,
                 name: 'Docs Repo',
-                webUrl: 'https://dev.azure.com/contoso/project/_git/docs'
+                webUrl: 'https://dev.azure.com/contoso/project/_git/docs',
+                project: { id: projectId }
             }
         ];
 
@@ -135,6 +138,7 @@ async function testRenderRepositoryGroups() {
 
         await new Promise((resolve) => setTimeout(resolve, 0));
         assert.equal(prContainer.querySelector('.reviewer-chip--approved span.reviewer-status').title, 'Approved');
+
 
         const updatedText = document.getElementById('updated-at').textContent;
         assert.ok(updatedText.startsWith('Updated '));

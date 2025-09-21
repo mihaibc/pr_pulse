@@ -3,39 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <title>PR Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <div class="container">
-        <header class="page-header">
-            <div>
-                <h1 id="page-title">Active Pull Requests</h1>
-                <p class="subtitle">Stay on top of every review happening across repositories in this project.</p>
+    <div class="app-shell">
+        <header class="app-header">
+            <div class="header-brand">
+                <span class="brand-icon" aria-hidden="true">
+                    <img src="images/logo.png" alt="PR Pulse" loading="lazy">
+                </span>
+                <div class="brand-meta">
+                    <h1 id="page-title">PR Pulse</h1>
+                    <p class="brand-subtitle">Unified pull request command center</p>
+                </div>
             </div>
-            <span class="updated-chip" id="updated-at" aria-live="polite">Gathering updates…</span>
+            <div class="header-meta">
+                <div class="header-updated" aria-live="polite">
+                    <span class="material-symbol" aria-hidden="true">schedule</span>
+                    <span id="updated-at">Gathering updates…</span>
+                </div>
+                <button class="refresh-button" type="button" id="refresh-button" aria-label="Refresh pull requests">
+                    <span class="material-symbol" aria-hidden="true">refresh</span>
+                </button>
+            </div>
         </header>
 
-        <section class="metric-grid" aria-label="Pull request summary">
-            <article class="metric-card" aria-live="polite">
-                <span class="metric-label">Total Active PRs</span>
-                <span class="metric-value" id="metric-total">0</span>
-            </article>
-            <article class="metric-card warning" aria-live="polite">
-                <span class="metric-label">Over 2 Days</span>
-                <span class="metric-value" id="metric-warning">0</span>
-            </article>
-            <article class="metric-card danger" aria-live="polite">
-                <span class="metric-label">Over 5 Days</span>
-                <span class="metric-value" id="metric-danger">0</span>
-            </article>
-        </section>
+        <main class="app-main">
+            <section class="metric-grid" aria-label="Pull request summary">
+                <article class="metric-card" aria-live="polite">
+                    <div class="metric-icon metric-total" aria-hidden="true"></div>
+                    <div class="metric-copy">
+                        <span class="metric-label">Total PRs</span>
+                        <span class="metric-value" id="metric-total">0</span>
+                    </div>
+                </article>
+                <article class="metric-card warning" aria-live="polite">
+                    <div class="metric-icon metric-warning" aria-hidden="true"></div>
+                    <div class="metric-copy">
+                        <span class="metric-label">2-Day Warning</span>
+                        <span class="metric-value" id="metric-warning">0</span>
+                    </div>
+                </article>
+                <article class="metric-card danger" aria-live="polite">
+                    <div class="metric-icon metric-danger" aria-hidden="true"></div>
+                    <div class="metric-copy">
+                        <span class="metric-label">5-Day Danger</span>
+                        <span class="metric-value" id="metric-danger">0</span>
+                    </div>
+                </article>
+            </section>
 
-        <div id="pr-container" class="pr-container">
-            <div id="loading" class="loading-state" role="status" aria-live="polite">
-                <div class="spinner"></div>
-                <p>Loading pull requests…</p>
-            </div>
-        </div>
+            <section id="pr-container" class="pr-container">
+                <div id="loading" class="loading-state" role="status" aria-live="polite">
+                    <div class="spinner"></div>
+                    <p>Loading pull requests…</p>
+                </div>
+            </section>
+        </main>
     </div>
     <script type="module" src="main.js"></script>
 </body>

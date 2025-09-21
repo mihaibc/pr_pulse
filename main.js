@@ -97,3 +97,12 @@ async function loadPullRequests() {
 loadPullRequests().catch((error) => {
     console.error(error);
 });
+
+const refreshButton = document.getElementById("refresh-button");
+if (refreshButton) {
+    refreshButton.addEventListener("click", () => {
+        loadPullRequests().catch((error) => {
+            console.error(error);
+        });
+    });
+}

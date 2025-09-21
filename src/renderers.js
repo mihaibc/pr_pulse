@@ -26,31 +26,6 @@ function createBadge(level, text, title) {
     return badge;
 }
 
-function createMetaRow(label, value, title) {
-    const row = document.createElement("div");
-    row.className = "pr-meta-row";
-
-    const labelEl = document.createElement("span");
-    labelEl.className = "pr-meta-label";
-    labelEl.textContent = label;
-
-    const valueEl = document.createElement("span");
-    valueEl.className = "pr-meta-value";
-
-    if (value instanceof Node) {
-        valueEl.appendChild(value);
-    } else {
-        valueEl.textContent = value;
-    }
-
-    if (title) {
-        valueEl.title = title;
-    }
-
-    row.append(labelEl, valueEl);
-    return row;
-}
-
 function buildBranchFlow(source, target) {
     const flow = document.createElement("span");
     flow.className = "branch-flow";
@@ -78,7 +53,11 @@ function prWebUrl(repoWebUrl, pullRequestId) {
 }
 
 async function hydrateReviewers(pr, context) {
-    const { repoId, projectBaseUrl, accessToken, reviewersList } = context;
+    const { repoId, projectBaseUrl, accessToken, reviewersList, reviewerStats } = context;
+
+    if (reviewerStats) {
+        reviewerStats.textContent = "Loading…";
+    }
 
     try {
         let reviewers = Array.isArray(pr.reviewers) ? pr.reviewers : [];
@@ -96,11 +75,18 @@ async function hydrateReviewers(pr, context) {
 
         if (!reviewers.length) {
             reviewersList.classList.add("reviewer-list-empty");
-            reviewersList.textContent = "No reviewers";
+            reviewersList.textContent = "";
+            if (reviewerStats) {
+                reviewerStats.textContent = "No reviewers";
+            }
             return;
         }
 
-        reviewers.forEach((reviewer) => {
+        let approvals = 0;
+        let rejections = 0;
+        let waiting = 0;
+
+        reviewers.forEach((reviewer, index) => {
             const chip = document.createElement("span");
             chip.className = "reviewer-chip";
 
@@ -117,21 +103,41 @@ async function hydrateReviewers(pr, context) {
             if (vote >= 10) {
                 chip.classList.add("reviewer-chip--approved");
                 status.title = "Approved";
+                approvals += 1;
             } else if (vote <= -10) {
                 chip.classList.add("reviewer-chip--rejected");
                 status.title = "Rejected";
+                rejections += 1;
             } else {
                 chip.classList.add("reviewer-chip--pending");
                 status.title = "Waiting";
+                waiting += 1;
             }
 
             chip.appendChild(status);
             reviewersList.appendChild(chip);
         });
+
+        if (reviewerStats) {
+            const parts = [];
+            if (approvals > 0) {
+                parts.push(`✓ ${approvals}`);
+            }
+            if (waiting > 0) {
+                parts.push(`• ${waiting}`);
+            }
+            if (rejections > 0) {
+                parts.push(`✗ ${rejections}`);
+            }
+            reviewerStats.textContent = parts.length ? parts.join(" · ") : "No votes";
+        }
     } catch (error) {
         console.warn("Failed to load reviewers", error);
         reviewersList.classList.add("reviewer-list-empty");
-        reviewersList.textContent = "Reviewers unavailable";
+        reviewersList.textContent = "";
+        if (reviewerStats) {
+            reviewerStats.textContent = "Reviewers unavailable";
+        }
     }
 }
 
@@ -154,10 +160,10 @@ function createPrListItem(pr, options) {
         prItem.classList.add("is-draft");
     }
 
+    const reviewUrl = prWebUrl(repoWebUrl, pr.pullRequestId);
     const publishedDate = pr.creationDate ? new Date(pr.creationDate) : null;
     const publishedValid = publishedDate && !Number.isNaN(publishedDate.getTime());
-    const activeSince = publishedValid ? publishedDate : null;
-    const activeMs = activeSince ? Math.max(0, now.getTime() - activeSince.getTime()) : 0;
+    const activeMs = publishedValid ? Math.max(0, now.getTime() - publishedDate.getTime()) : 0;
     const severity = classifyActiveDuration(activeMs);
 
     if (severity.level === "warning") {
@@ -180,7 +186,27 @@ function createPrListItem(pr, options) {
     const prHeader = document.createElement("div");
     prHeader.className = "pr-card-header";
 
-    const reviewUrl = prWebUrl(repoWebUrl, pr.pullRequestId);
+    const heading = document.createElement("div");
+    heading.className = "pr-card-heading";
+
+    const statusDot = document.createElement("span");
+    statusDot.className = `pr-status-dot ${severity.level}`;
+    heading.appendChild(statusDot);
+
+    const authorAvatar = document.createElement("span");
+    authorAvatar.className = "pr-author-avatar";
+    if (pr.createdBy && pr.createdBy.imageUrl) {
+        const img = document.createElement("img");
+        img.src = pr.createdBy.imageUrl;
+        img.alt = pr.createdBy.displayName ? `${pr.createdBy.displayName}'s avatar` : "Author avatar";
+        img.loading = "lazy";
+        authorAvatar.appendChild(img);
+    } else {
+        const initial = (pr.createdBy && pr.createdBy.displayName ? pr.createdBy.displayName.trim().charAt(0) : "?").toUpperCase();
+        authorAvatar.textContent = initial;
+    }
+    heading.appendChild(authorAvatar);
+
     const prTitle = document.createElement(reviewUrl ? "a" : "span");
     prTitle.className = "pr-title";
     prTitle.textContent = pr.title || "Untitled pull request";
@@ -191,6 +217,24 @@ function createPrListItem(pr, options) {
         prTitle.rel = "noopener";
     }
 
+    const textStack = document.createElement("div");
+    textStack.className = "pr-card-text";
+    textStack.appendChild(prTitle);
+
+    const metaLine = document.createElement("div");
+    metaLine.className = "pr-card-meta";
+    const authorName = pr.createdBy ? pr.createdBy.displayName : "Unknown";
+    if (publishedValid) {
+        metaLine.textContent = `#${pr.pullRequestId} opened ${timeAgo(publishedDate)} by ${authorName}`;
+        metaLine.title = formatDateTime(publishedDate);
+    } else {
+        metaLine.textContent = `#${pr.pullRequestId} created by ${authorName}`;
+    }
+    textStack.appendChild(metaLine);
+
+    heading.appendChild(textStack);
+    prHeader.appendChild(heading);
+
     const badgeGroup = document.createElement("div");
     badgeGroup.className = "pr-badges";
 
@@ -198,75 +242,47 @@ function createPrListItem(pr, options) {
         badgeGroup.appendChild(createBadge("draft", "Draft", "This pull request is still marked as draft"));
     }
 
-    const badgeText = `Active ${formatBadgeDuration(activeMs)}`;
-    const badge = createBadge(severity.level, badgeText, severity.description);
+    const badge = createBadge(severity.level, "", severity.description);
+    badge.innerHTML = `
+        <span class="badge-icon"></span>
+        <span class="badge-text">${formatBadgeDuration(activeMs)}</span>
+    `;
     badgeGroup.appendChild(badge);
 
-    prHeader.append(prTitle, badgeGroup);
-
-    const prMeta = document.createElement("div");
-    prMeta.className = "pr-meta";
-
-    const creatorContent = document.createElement("span");
-    creatorContent.className = "creator-info";
-
-    if (pr.createdBy && pr.createdBy.imageUrl) {
-        const avatar = document.createElement("img");
-        avatar.className = "avatar";
-        avatar.src = pr.createdBy.imageUrl;
-        avatar.alt = `${pr.createdBy.displayName || "Author"}'s avatar`;
-        avatar.loading = "lazy";
-        avatar.width = 28;
-        avatar.height = 28;
-        creatorContent.appendChild(avatar);
-    }
-
-    const creatorName = document.createElement("span");
-    creatorName.textContent = pr.createdBy ? pr.createdBy.displayName : "Unknown";
-    creatorContent.appendChild(creatorName);
-
-    const creatorRow = createMetaRow("Creator", creatorContent);
+    const headerAside = document.createElement("div");
+    headerAside.className = "pr-card-aside";
+    headerAside.appendChild(badgeGroup);
+    prHeader.appendChild(headerAside);
 
     const sourceBranch = (pr.sourceRefName || "").replace("refs/heads/", "");
     const targetBranch = (pr.targetRefName || "").replace("refs/heads/", "");
-    const branchRow = createMetaRow("Branches", buildBranchFlow(sourceBranch, targetBranch));
+    const branchFlow = buildBranchFlow(sourceBranch, targetBranch);
+    branchFlow.classList.add("pr-branch-flow");
 
-    let publishedValue;
-    if (publishedValid) {
-        publishedValue = document.createElement("span");
-        publishedValue.textContent = formatDateTime(publishedDate);
-        const relative = document.createElement("span");
-        relative.className = "text-subtle";
-        relative.textContent = ` (${timeAgo(publishedDate)})`;
-        publishedValue.appendChild(relative);
-    } else {
-        publishedValue = "Unknown";
-    }
-
-    const publishedRow = createMetaRow(
-        "Published",
-        publishedValue,
-        publishedValid ? publishedDate.toISOString() : undefined
-    );
-
-    let activeValue;
-    if (publishedValid) {
-        activeValue = document.createElement("span");
-        activeValue.textContent = formatDuration(activeMs);
-        const since = document.createElement("span");
-        since.className = "text-subtle";
-        since.textContent = ` (since ${timeAgo(publishedDate)})`;
-        activeValue.appendChild(since);
-    } else {
-        activeValue = formatDuration(activeMs);
-    }
-
-    const activeRow = createMetaRow("Active for", activeValue, severity.description);
-
-    prMeta.append(creatorRow, branchRow, publishedRow, activeRow);
+    const branchRow = document.createElement("div");
+    branchRow.className = "pr-branch-row";
+    branchRow.appendChild(branchFlow);
 
     const prFooter = document.createElement("div");
-    prFooter.className = "pr-footer";
+    prFooter.className = "pr-card-footer";
+
+    const reviewersWrap = document.createElement("div");
+    reviewersWrap.className = "pr-reviewers";
+    const reviewersList = document.createElement("div");
+    reviewersList.className = "reviewer-stack reviewer-list reviewer-list-empty";
+    const reviewerStats = document.createElement("span");
+    reviewerStats.className = "reviewer-stats";
+
+    if (fetchDetails) {
+        reviewersList.textContent = "Loading…";
+        reviewerStats.textContent = "Loading…";
+    } else {
+        reviewersList.textContent = "";
+        reviewerStats.textContent = "No reviewers";
+    }
+
+    reviewersWrap.append(reviewersList, reviewerStats);
+    prFooter.appendChild(reviewersWrap);
 
     const reviewButton = document.createElement("a");
     reviewButton.className = "review-button";
@@ -281,40 +297,30 @@ function createPrListItem(pr, options) {
         reviewButton.setAttribute("aria-disabled", "true");
     }
 
+
     prFooter.appendChild(reviewButton);
 
-    const supplementary = document.createElement("div");
-    supplementary.className = "pr-supplementary";
-
-    const reviewersContainer = document.createElement("div");
-    reviewersContainer.className = "pr-reviewers";
-    const reviewersLabel = document.createElement("span");
-    reviewersLabel.className = "section-label";
-    reviewersLabel.textContent = "Reviewers";
-    const reviewersList = document.createElement("div");
-    reviewersList.className = "reviewer-list reviewer-list-empty";
-    reviewersList.textContent = fetchDetails ? "Loading…" : "Unavailable";
-    reviewersContainer.append(reviewersLabel, reviewersList);
-    supplementary.appendChild(reviewersContainer);
-
-    prItem.append(prHeader, prMeta, supplementary, prFooter);
+    prItem.append(prHeader, branchRow, prFooter);
 
     if (fetchDetails && repoId && projectBaseUrl && accessToken) {
         hydrateReviewers(pr, {
             repoId,
             projectBaseUrl,
             accessToken,
-            reviewersList
+            reviewersList,
+            reviewerStats
         }).catch((error) => {
             console.warn("Failed to hydrate reviewers", error);
             reviewersList.textContent = "Reviewers unavailable";
+            reviewerStats.textContent = "Reviewers unavailable";
         });
     } else {
-        supplementary.style.display = "none";
+        reviewersWrap.style.display = "none";
     }
 
     return prItem;
 }
+
 
 function appendEmptyState(prContainer, message, details) {
     const emptyState = document.createElement("div");
@@ -443,6 +449,7 @@ export async function renderRepositoryGroups({ repositories, prContainer, now, p
                         includeInMetrics: true,
                         markDraft: false,
                         repoId: entry.repo.id,
+                        projectId: entry.repo?.project?.id || entry.repo?.projectId,
                         projectBaseUrl,
                         accessToken,
                         fetchDetails: true
@@ -469,20 +476,21 @@ export async function renderRepositoryGroups({ repositories, prContainer, now, p
 
             const draftsList = document.createElement("ul");
             draftsList.className = "pr-list pr-list-drafts";
-            draftPrs.forEach((pr) => {
-                draftsList.appendChild(
-                    createPrListItem(pr, {
-                        now,
-                        repoWebUrl,
-                        metrics,
-                        includeInMetrics: false,
-                        markDraft: true,
-                        repoId: entry.repo.id,
-                        projectBaseUrl,
-                        accessToken,
-                        fetchDetails: true
-                    })
-                );
+                draftPrs.forEach((pr) => {
+                    draftsList.appendChild(
+                        createPrListItem(pr, {
+                            now,
+                            repoWebUrl,
+                            metrics,
+                            includeInMetrics: false,
+                            markDraft: true,
+                            repoId: entry.repo.id,
+                            projectId: entry.repo?.project?.id || entry.repo?.projectId,
+                            projectBaseUrl,
+                            accessToken,
+                            fetchDetails: true
+                        })
+                    );
             });
             draftsDetails.appendChild(draftsList);
             repoContent.appendChild(draftsDetails);

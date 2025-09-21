@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.16 - 2025-09-18
+- Reworked the dashboard styling to mirror Azure DevOps light/dark themes using their neutral surfaces, typography, and spacing scale.
+- Tightened PR cards into a single-column list with compact metadata, inline branch chips, and reviewer badges beside the Review CTA for faster scanning.
+- Displayed the PR author's avatar within each card header and simplified badges/button styling for better accessibility and contrast.
+
 ## 1.0.15 - 2025-09-18
 - Surfaced reviewer avatars and vote status directly in each PR card, and removed the experimental checks UI pending full support.
 
